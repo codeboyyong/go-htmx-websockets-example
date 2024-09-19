@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/coder/websocket"
 	"github.com/sigrdrifa/go-htmx-websockets-example/internal/hardware"
-	"nhooyr.io/websocket"
 )
 
 type server struct {
@@ -86,39 +86,44 @@ func (cs *server) publishMsg(msg []byte) {
 	}
 }
 
+func startServer(srv *server) {
+	for {
+		systemData, err := hardware.GetSystemSection()
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		diskData, err := hardware.GetDiskSection()
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		cpuData, err := hardware.GetCpuSection()
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		timeStamp := time.Now().Format("2006-01-02 15:04:05")
+		msg := []byte(`
+  <div hx-swap-oob="innerHTML:#update-timestamp">
+	<p><i style="color: green" class="fa fa-circle"></i> ` + timeStamp + `</p>
+  </div>
+  <div hx-swap-oob="innerHTML:#system-data">` + systemData + `</div>
+  <div hx-swap-oob="innerHTML:#cpu-data">` + cpuData + `</div>
+  <div hx-swap-oob="innerHTML:#disk-data">` + diskData + `</div>`)
+		srv.publishMsg(msg)
+		time.Sleep(3 * time.Second)
+		fmt.Println("Sleep 3 seconds")
+
+	}
+}
+
 func main() {
 	fmt.Println("Starting monitor server on port 8080")
 	s := NewServer()
 
-	go func(srv *server) {
-		for {
-			systemData, err := hardware.GetSystemSection()
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
-			diskData, err := hardware.GetDiskSection()
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
-			cpuData, err := hardware.GetCpuSection()
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
-			timeStamp := time.Now().Format("2006-01-02 15:04:05")
-			msg := []byte(`
-      <div hx-swap-oob="innerHTML:#update-timestamp">
-        <p><i style="color: green" class="fa fa-circle"></i> ` + timeStamp + `</p>
-      </div>
-      <div hx-swap-oob="innerHTML:#system-data">` + systemData + `</div>
-      <div hx-swap-oob="innerHTML:#cpu-data">` + cpuData + `</div>
-      <div hx-swap-oob="innerHTML:#disk-data">` + diskData + `</div>`)
-			srv.publishMsg(msg)
-			time.Sleep(3 * time.Second)
-		}
-	}(s)
+	// go func(srv *server) {
+	go startServer(s)
 
 	err := http.ListenAndServe(":8080", &s.mux)
 	if err != nil {
