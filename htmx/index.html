@@ -25,7 +25,8 @@
       <div class="row">
         <div class="col-md-12">
           <h1>YZ's Hardware Monitor <i class="fa-brands fa-golang" style="float: right; padding-top: 0.8rem;" ></i></h1>
-          <div hx-ext="ws" ws-connect="ws://localhost:8080/ws">
+          <!--div hx-ext="ws" ws-connect="ws://localhost:8080/ws"-->
+	  <div id="web_skt" hx-ext="ws" ws-connect="ws://localhost:8080/ws">
             <div id="update-timestamp">Waiting for data..</div>
             <hr />
             <div id="monitor-data">
@@ -56,5 +57,11 @@
       crossorigin="anonymous"
     ></script>
     <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/ws.js"></script>
+    <script>
+	    var hostname=window.location.hostname;
+	    console.log("Hostname:", window.location.hostname);
+	    var websoketURL = 'ws://'+hostname+':8080/ws' 
+	    document.getElementById('web_skt').setAttribute('ws-connect',websoketURL)
+    </script>
   </body>
 </html>
